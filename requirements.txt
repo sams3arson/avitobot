@@ -1,0 +1,7 @@
+pyrogram
+tgcrypto
+apscheduler
+selenium
+undetected-chromedriver
+beautifulsoup4
+lxml
