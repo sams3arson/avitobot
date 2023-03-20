@@ -6,11 +6,10 @@ from typing import TypedDict
 import settings
 import asyncio
 
-import selenium.webdriver.support.expected_conditions as EC
-from selenium.webdriver.support.wait import WebDriverWait
-from selenium.webdriver.common.by import By
-from selenium.webdriver.chrome.options import Options
-import undetected_chromedriver as chromedriver
+import pyppeteer
+from pyppeteer.browser import Browser
+from pyppeteer.page import Page
+
 
 @dataclass(slots=True, frozen=True)
 class Request:
@@ -48,24 +47,18 @@ class Payload(TypedDict):
 
 
 class Avito:
-    def __init__(self) -> None:
-        self.driver = self._setup_driver()
-        self.driver.set_window_size(1920, 1080)
-
-    def _setup_driver(self) -> chromedriver.Chrome:
-        options = Options()
-        options.add_argument("--headless")
-        driver = chromedriver.Chrome(options=options)
-        return driver
+    async def setup_browser(self) -> None:
+        self.browser = await pyppeteer.launch()
 
     async def process_request(self, request: Request) -> RequestResult:
         # в результате запроса будет:
         # мин цена, макс цена, ср цена, колво объявлений, можно список объявлений
         # (первые 20)
+        page = await self.browser.newPage()
         base_url = self._format_url(request)
-        self.driver.get(base_url)
-        url = self._get_proper_url(request)
-        response = self._get_avito_response(url)
+        await page.goto(base_url)
+        url = await self._get_proper_url(page, request)
+        response = await self._get_avito_response(page, url)
         pages_amount = min(self._get_pages_amount(response),
                            settings.MAX_PAGE_LIMIT)
         if pages_amount > request.page_limit > 0:
@@ -73,8 +66,8 @@ class Avito:
 
         pages = [response]
         for page_number in range(2, pages_amount + 1):
-            page_response = self._get_avito_response(self._add_page_url(url,
-                                                                   page_number))
+            page_response = await self._get_avito_response(page, 
+                                        self._add_page_url(url, page_number))
             if "items-extraTitle" in page_response: # ads from other cities
                 response_local_only = page_response.split("items-extraTitle")[0]
                 pages.append(response_local_only)
@@ -83,44 +76,43 @@ class Avito:
             await asyncio.sleep(2) # don't wanna get banned by avito
 
         products = list()
-        for page in pages:
-            products.extend(self._parse_avito_response(page))
+        for avito_page in pages:
+            products.extend(self._parse_avito_response(avito_page))
         
         prices = [prod.price for prod in products]
         min_price = min(prices)
         max_price = max(prices)
         avg_price = sum(prices) // len(prices)
 
+        await page.close()
         return RequestResult(min_price=min_price, max_price=max_price,
                              avg_price=avg_price, ads_count=len(products),
                              ads_list=products, url=url)
 
-    def check_city(self, city: str) -> bool:
-        self.driver.get(settings.AVITO_CITY.format(city=city))
-        if "Ой! Такой страницы на нашем сайте нет" in self.driver.page_source:
+    async def check_city(self, city: str) -> bool:
+        page = await self.browser.newPage()
+        await page.goto(settings.AVITO_CITY.format(city=city))
+        page_source = await page.content()
+        await page.close()
+        if "Ой! Такой страницы на нашем сайте нет" in page_source:
             return False
         return True
 
-    def _get_avito_response(self, url: str) -> str:
-        self.driver.get(url)
-        return self.driver.page_source
+    async def _get_avito_response(self, page: Page, url: str) -> str:
+        await page.goto(url)
+        return await page.content()
 
-    def _get_proper_url(self, request: Request) -> str:
-        price_from = self.driver.find_element(By.CSS_SELECTOR, "input"
-                                                "[data-marker='price/from']")
-        wait = WebDriverWait(self.driver, timeout=5)
-        wait.until(EC.element_to_be_clickable(price_from))
+    async def _get_proper_url(self, page: Page, request: Request) -> str:
+        await page.waitForSelector("input[data-marker='price/from']")
         if request.min_price:
-            price_from.send_keys(str(request.min_price))
+            await page.type("input[data-marker='price/from']", 
+                            str(request.min_price))
         if request.max_price:
-            price_to = self.driver.find_element(By.CSS_SELECTOR, "input"
-                                                "[data-marker='price/to']")
-            price_to.send_keys(str(request.max_price))
+            await page.type("input[data-marker='price/to']", 
+                            str(request.max_price))
 
-        button = self.driver.find_element(By.CSS_SELECTOR, "button[data-marker="
-                                              "'search-filters/submit-button']")
-        button.click()
-        return self.driver.current_url + "&localPriority=1"
+        await page.click("button[data-marker='search-filters/submit-button']")
+        return page.url + "&localPriority=1"
 
 
     def _get_pages_amount(self, page_source: str) -> int:
@@ -167,7 +159,6 @@ if __name__ == "__main__":
     req = Request(query="rx 580", city="ufa", min_price=2000, max_price=10000, 
                   page_limit=0, sorting=0)
     avito = Avito()
-    print(avito._format_url(req))
     #with open("example.html", "r") as f:
     #    page = f.read()
 

@@ -1,7 +1,6 @@
 pyrogram
 tgcrypto
 apscheduler
-selenium
-undetected-chromedriver
+pyppeteer
 beautifulsoup4
 lxml

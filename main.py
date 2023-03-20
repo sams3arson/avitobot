@@ -8,12 +8,13 @@ from custom_types import UserId
 from transliterate import translit
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.job import Job
-from time import sleep
+import asyncio
 import database
 import settings
 import texts
 import wrappers
 import avito_api
+import random
 import re
 
 credentials = creds.get(Path(settings.CREDS_FILE))
@@ -35,8 +36,8 @@ user_states: dict[UserId, State] = dict()
 
 scheduler = AsyncIOScheduler()
 avito = avito_api.Avito()
+asyncio.run(avito.setup_browser())
 app = Client("avitobot", ***REMOVED***api_id, ***REMOVED***api_hash, ***REMOVED***bot_token)
-
 
 def format_request_result(req_result: avito_api.RequestResult) -> str:
     return texts.REQUEST_RESULT.format(min_price=req_result.min_price,
@@ -72,7 +73,7 @@ async def track_request(client: Client, user_id: int) -> None:
 
 
     for request_raw in db_cursor.fetchall():
-        sleep(10) # don't wanna get banned by avito
+        await asyncio.sleep(random.randint(7, 13)) # don't wanna get banned by avito
         request = avito_api.Request(query=request_raw[1], city=city,
                                     min_price=request_raw[2], max_price=
                                     request_raw[3], page_limit=request_raw[4],
@@ -269,7 +270,7 @@ async def process_city(client: Client, message: Message) -> None:
     city_text = translit(city_human.lower(), "ru", reversed=True).replace("j",
                                                           "y").replace(" ", "_")
     msg = await message.reply("Обрабатываем запрос...")
-    if not avito.check_city(city_text):
+    if not await avito.check_city(city_text):
         await msg.delete()
         await message.reply("Не удалось настроить поиск по указанному "
                 "населенному пункту. Проверьте правильность слова и попробуйте "
@@ -333,7 +334,7 @@ async def enable_track_request(client: Client, callback_query: CallbackQuery) \
     request = avito_api.Request(query=query, city=city, min_price=min_price,
                     max_price=max_price, page_limit=page_limit, sorting=sorting)
 
-    result = avito.process_request(request)
+    result = await avito.process_request(request)
     db_cursor.execute("INSERT INTO request_result (request_id, avg_price, "
                       "min_price, max_price) VALUES (?, ?, ?, ?)", (request_rowid,
                             result.avg_price, result.min_price, result.max_price))
