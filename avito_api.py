@@ -4,10 +4,12 @@ from bs4 import BeautifulSoup as BSoup
 from time import sleep
 from typing import TypedDict
 import settings
+import asyncio
 
 import selenium.webdriver.support.expected_conditions as EC
 from selenium.webdriver.support.wait import WebDriverWait
 from selenium.webdriver.common.by import By
+from selenium.webdriver.chrome.options import Options
 import undetected_chromedriver as chromedriver
 
 @dataclass(slots=True, frozen=True)
@@ -48,12 +50,15 @@ class Payload(TypedDict):
 class Avito:
     def __init__(self) -> None:
         self.driver = self._setup_driver()
+        self.driver.set_window_size(1920, 1080)
 
     def _setup_driver(self) -> chromedriver.Chrome:
-        driver = chromedriver.Chrome()
+        options = Options()
+        options.add_argument("--headless")
+        driver = chromedriver.Chrome(options=options)
         return driver
 
-    def process_request(self, request: Request) -> RequestResult:
+    async def process_request(self, request: Request) -> RequestResult:
         # в результате запроса будет:
         # мин цена, макс цена, ср цена, колво объявлений, можно список объявлений
         # (первые 20)
@@ -75,10 +80,10 @@ class Avito:
                 pages.append(response_local_only)
                 break
             pages.append(page_response)
+            await asyncio.sleep(2) # don't wanna get banned by avito
 
         products = list()
         for page in pages:
-            sleep(3) # don't wanna get banned by Avito
             products.extend(self._parse_avito_response(page))
         
         prices = [prod.price for prod in products]
