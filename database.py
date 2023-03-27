@@ -40,3 +40,12 @@ def get_user_pings(db_connection: sqlite3.Connection) -> set[UserId]:
     pings = {user_id[0] for user_id in pings_raw}
     return pings
 
+
+def get_user_track_reqs(db_connection: sqlite3.Connection) -> set[UserId]:
+    cursor = db_connection.cursor()
+    cursor.execute("SELECT DISTINCT user_id FROM request WHERE is_tracked = 1")
+    tracks_raw = cursor.fetchall()
+
+    tracks = {user_id[0] for user_id in tracks_raw}
+    return tracks
+

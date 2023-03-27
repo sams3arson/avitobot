@@ -5,7 +5,7 @@ from pyrogram.handlers import MessageHandler, CallbackQueryHandler
 from pathlib import Path
 from tools import creds
 from states import State
-from custom_types import UserId
+from custom_types import UserId, CachedMarkup
 from transliterate import translit
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.job import Job
@@ -29,11 +29,14 @@ allowed_users: list[UserId] = [owner_id] + database.get_allowed_users(db_conn)
 user_city: dict[UserId, str] = database.get_user_cities(db_conn)
 user_interval: dict[UserId, int] = database.get_user_intervals(db_conn)
 user_ping: set[UserId] = database.get_user_pings(db_conn)
+user_track_req: set[UserId] = database.get_user_track_reqs(db_conn)
 
 ping_job: dict[UserId, Job] = dict()
 track_req_job: dict[UserId, Job] = dict()
 
 user_states: dict[UserId, State] = dict()
+
+user_cached_markup: dict[UserId, CachedMarkup] = dict()
 
 scheduler = AsyncIOScheduler()
 avito = avito_api.Avito()
@@ -57,8 +60,13 @@ def start_track_req_job(client: Client, user_id: UserId):
     minutes = user_interval.get(user_id)
     if not minutes:
         minutes = settings.DEFAULT_INTERVAL
-    return scheduler.add_job(track_request, "interval", seconds=30, args=(
+    return scheduler.add_job(track_request, "interval", minutes=minutes, args=(
                                                             client, user_id))
+
+
+def start_track_requests(client: Client):
+    for user_id in user_track_req:
+        track_req_job[user_id] = start_track_req_job(client, user_id)
 
 
 async def track_request(client: Client, user_id: int) -> None:
@@ -208,6 +216,36 @@ async def request(client: Client, message: Message) -> None:
                         "Сортировка:\n1 - дешевле, 2 - дороже, 3 - по дате.")
 
 
+async def stop(client: Client, message: Message) -> None:
+    user_id = message.from_user.id
+
+    db_cursor.execute("SELECT query, id FROM request WHERE user_id = ? "
+                      "AND is_tracked = 1", (user_id,))
+    requests_raw = db_cursor.fetchall()
+
+    if not requests_raw:
+        await message.reply("У вас нет отслеживаемых запросов.")
+        return
+
+    buttons = list()
+    row = list()
+    for req_row in requests_raw:
+        if len(row) == 2:
+            buttons.append(row)
+            row = list()
+        row.append(InlineKeyboardButton(req_row[0], callback_data=
+                                        f"STOP_TRACK_REQUEST={req_row[1]}"))
+    buttons.append(row)
+
+    markup = buttons[0:3]
+    if len(buttons) > 3:
+        markup.append([InlineKeyboardButton("➡️ На следующую страницу",
+                                            callback_data=f"SWITCH_PAGE=3_6")])
+    await message.reply("Выберите запрос, который больше не нужно отслеживать:",
+                        reply_markup=InlineKeyboardMarkup(markup))
+    user_cached_markup[user_id] = CachedMarkup(buttons, message.id)
+
+
 async def process_request(client: Client, message: Message) -> None:
     user_id = message.from_user.id
     user_states[user_id] = State.NO_STATE
@@ -293,6 +331,11 @@ async def process_interval(client: Client, message: Message) -> None:
     db_cursor.execute("INSERT INTO interval (interval_len, user_id) VALUES (?, ?)",
                       (interval, user_id))
     db_conn.commit()
+
+    if user_id in track_req_job:
+        track_req_job[user_id].remove()
+        track_req_job[user_id] = start_track_req_job(client, user_id)
+
     await message.reply(f"Теперь интервал проверки объявлений составляет {interval} "
                         "минут.")
 
@@ -337,6 +380,47 @@ async def enable_track_request(client: Client, callback_query: CallbackQuery) \
                               "будут отслеживаться.")
 
 
+async def process_stop(client: Client, callback_query: CallbackQuery):
+    user_id = callback_query.from_user.id
+    callback_data = callback_query.data
+
+    match = re.search(settings.STOP_TRACK_REQUEST_PATTERN, callback_data)
+    request_id = match.group(1)
+
+    db_cursor.execute("UPDATE request SET is_tracked = 0 WHERE id = ?",
+                      (request_id,))
+    db_conn.commit()
+    await callback_query.answer("Этот запрос больше не отслеживается.")
+
+
+async def swtich_page(client: Client, callback_query: CallbackQuery):
+    user_id = callback_query.from_user.id
+    callback_data = callback_query.data
+
+    match = re.search(settings.SWITCH_PAGE_PATTERN, callback_data)
+    start_page, end_page = int(match.group(1)), int(match.group(2))
+
+    cached_markup = user_cached_markup.get(user_id)
+    if not cached_markup:
+        await client.send_message(user_id, "Этот сообщение слишком старое, чтобы "
+                  "интерактировать с ним. Запросите новое и работайте с ним.")
+        return
+
+    buttons, msg_id = cached_markup
+
+    markup = buttons[start_page:end_page]
+    arrows = []
+    if start_page > 0:
+        arrows.append(InlineKeyboardButton("⬅️ На предыдущую страницу",
+                    callback_data=f"SWITCH_PAGE={start_page - 3}_{end_page - 3}"))
+    if len(buttons) > end_page:
+        arrows.append(InlineKeyboardButton("➡️ На следующую страницу",
+                        callback_data=f"SWITCH_PAGE={start_page + 3}_{end_page + 3}"))
+    markup.append(arrows)
+    await callback_query.message.edit_reply_markup(
+            InlineKeyboardMarkup(markup))
+
+
 async def any_message(client: Client, message: Message) -> None:
     user_id = message.from_user.id
     user_states[user_id] = State.NO_STATE
@@ -345,16 +429,21 @@ async def any_message(client: Client, message: Message) -> None:
 
 async def main():
     await avito.setup_browser()
-    #start_pings(app)
 
     app = Client("avitobot", ***REMOVED***api_id, ***REMOVED***api_hash, ***REMOVED***bot_token)
-    app.add_handler(MessageHandler(ignore, ~filters.private | ~filters.user(allowed_users)))
+
+    start_pings(app)
+    start_track_requests(app)
+
+    app.add_handler(MessageHandler(ignore, ~filters.private | 
+                                   ~filters.user(allowed_users)))
     app.add_handler(MessageHandler(start, filters.command(["help", "start"])))
     app.add_handler(MessageHandler(city, filters.command(["city"])))
     app.add_handler(MessageHandler(interval, filters.command(["interval"])))
     app.add_handler(MessageHandler(status, filters.command(["status"])))
     app.add_handler(MessageHandler(ping, filters.command(["ping"])))
     app.add_handler(MessageHandler(request, filters.command(["request"])))
+    app.add_handler(MessageHandler(stop, filters.command(["stop"])))
 
 
     app.add_handler(MessageHandler(process_request, filters.create(
@@ -366,6 +455,8 @@ async def main():
 
     app.add_handler(CallbackQueryHandler(enable_track_request, filters.create(
         wrappers.filter_callback_wrapper(settings.TRACK_REQUEST_PATTERN))))
+    app.add_handler(CallbackQueryHandler(process_stop, filters.create(
+        wrappers.filter_callback_wrapper(settings.STOP_TRACK_REQUEST_PATTERN))))
 
     app.add_handler(MessageHandler(any_message))
 
