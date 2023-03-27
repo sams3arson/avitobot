@@ -1,7 +1,6 @@
 from dataclasses import dataclass
 from typing import Literal 
 from bs4 import BeautifulSoup as BSoup
-from time import sleep
 from typing import TypedDict
 import settings
 import asyncio
@@ -40,15 +39,12 @@ class RequestResult:
     url: str
 
 
-class Payload(TypedDict):
-    name: str
-    pmin: int
-    pmax: int
-
-
 class Avito:
     async def setup_browser(self) -> None:
         self.browser = await pyppeteer.launch()
+
+    async def close_browser(self) -> None:
+        await self.browser.close()
 
     async def process_request(self, request: Request) -> RequestResult:
         # в результате запроса будет:
@@ -111,9 +107,12 @@ class Avito:
             await page.type("input[data-marker='price/to']", 
                             str(request.max_price))
 
-        await page.click("button[data-marker='search-filters/submit-button']")
+        await asyncio.gather(
+                page.waitForNavigation(),
+                page.click("button[data-marker='search-filters/submit-button']"),
+                )
+        print(page.url)
         return page.url + "&localPriority=1"
-
 
     def _get_pages_amount(self, page_source: str) -> int:
         soup = BSoup(page_source, "lxml")
@@ -142,7 +141,6 @@ class Avito:
         if description:
             return description.get("content").strip()
         return ""
-
 
     def _format_url(self, request: Request) -> str:
         return settings.AVITO_URL.format(

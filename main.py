@@ -1,6 +1,7 @@
-from pyrogram import Client, filters
+from pyrogram import Client, filters, idle
 from pyrogram.types import Message, InlineKeyboardButton, InlineKeyboardMarkup,\
         CallbackQuery
+from pyrogram.handlers import MessageHandler, CallbackQueryHandler
 from pathlib import Path
 from tools import creds
 from states import State
@@ -36,8 +37,6 @@ user_states: dict[UserId, State] = dict()
 
 scheduler = AsyncIOScheduler()
 avito = avito_api.Avito()
-asyncio.run(avito.setup_browser())
-app = Client("avitobot", ***REMOVED***api_id, ***REMOVED***api_hash, ***REMOVED***bot_token)
 
 def format_request_result(req_result: avito_api.RequestResult) -> str:
     return texts.REQUEST_RESULT.format(min_price=req_result.min_price,
@@ -114,20 +113,17 @@ async def send_ping(client: Client, user_id: UserId) -> None:
     await client.send_message(user_id, "Бот жив.")
 
 
-@app.on_message(~filters.private | ~filters.user(allowed_users))
 async def ignore(client: Client, message: Message) -> None:
     """For non-private messages or messages from users that are not allowed"""
     return
 
 
-@app.on_message(filters.command(["help", "start"]))
 async def start(client: Client, message: Message) -> None:
     user_id = message.from_user.id
     user_states[user_id] = State.NO_STATE
     await message.reply(texts.HELP_TEXT)
 
 
-@app.on_message(filters.command(["city"]))
 async def city(client: Client, message: Message) -> None:
     user_id = message.from_user.id
     user_states[user_id] = State.INPUT_CITY
@@ -135,7 +131,6 @@ async def city(client: Client, message: Message) -> None:
                         "искать объявления:")
 
 
-@app.on_message(filters.command(["interval"]))
 async def interval(client: Client, message: Message) -> None:
     user_id = message.from_user.id
     user_states[user_id] = State.INPUT_INTERVAL
@@ -143,7 +138,6 @@ async def interval(client: Client, message: Message) -> None:
                         "вашим запросам:")
 
 
-@app.on_message(filters.command(["status"]))
 async def status(client: Client, message: Message) -> None:
     user_id = message.from_user.id
     db_cursor.execute("SELECT human_name FROM city WHERE user_id = ?",
@@ -184,7 +178,6 @@ async def status(client: Client, message: Message) -> None:
     await message.reply(answer)
 
 
-@app.on_message(filters.command(["ping"]))
 async def ping(client: Client, message: Message) -> None:
     user_id = message.from_user.id
     user_states[user_id] = State.NO_STATE
@@ -205,7 +198,6 @@ async def ping(client: Client, message: Message) -> None:
                         "4 часа.")
 
 
-@app.on_message(filters.command(["request"]))
 async def request(client: Client, message: Message) -> None:
     user_id = message.from_user.id
     user_states[user_id] = State.INPUT_REQUEST
@@ -216,8 +208,6 @@ async def request(client: Client, message: Message) -> None:
                         "Сортировка:\n1 - дешевле, 2 - дороже, 3 - по дате.")
 
 
-@app.on_message(filters.create(wrappers.filter_state_wrapper(State.INPUT_REQUEST,
-                                                             user_states)))
 async def process_request(client: Client, message: Message) -> None:
     user_id = message.from_user.id
     user_states[user_id] = State.NO_STATE
@@ -260,8 +250,6 @@ async def process_request(client: Client, message: Message) -> None:
                         disable_web_page_preview=True)
 
 
-@app.on_message(filters.create(wrappers.filter_state_wrapper(State.INPUT_CITY,
-                                                             user_states)))
 async def process_city(client: Client, message: Message) -> None:
     user_id = message.from_user.id
     user_states[user_id] = State.NO_STATE
@@ -286,8 +274,6 @@ async def process_city(client: Client, message: Message) -> None:
     await message.reply("Поиск успешно настроен по указанному населенному пункту.")
 
 
-@app.on_message(filters.create(wrappers.filter_state_wrapper(State.INPUT_INTERVAL,
-                                                             user_states)))
 async def process_interval(client: Client, message: Message) -> None:
     user_id = message.from_user.id
     user_states[user_id] = State.NO_STATE
@@ -311,8 +297,6 @@ async def process_interval(client: Client, message: Message) -> None:
                         "минут.")
 
 
-@app.on_callback_query(filters.create(wrappers.filter_callback_wrapper(
-                                            settings.TRACK_REQUEST_PATTERN)))
 async def enable_track_request(client: Client, callback_query: CallbackQuery) \
         -> None:
     user_id = callback_query.from_user.id
@@ -353,14 +337,49 @@ async def enable_track_request(client: Client, callback_query: CallbackQuery) \
                               "будут отслеживаться.")
 
 
-@app.on_message()
 async def any_message(client: Client, message: Message) -> None:
     user_id = message.from_user.id
     user_states[user_id] = State.NO_STATE
     await message.reply(texts.PROVIDE_HELP)
-    
-start_pings(app)
-scheduler.start()
 
-app.run()
+
+async def main():
+    await avito.setup_browser()
+    #start_pings(app)
+
+    app = Client("avitobot", ***REMOVED***api_id, ***REMOVED***api_hash, ***REMOVED***bot_token)
+    app.add_handler(MessageHandler(ignore, ~filters.private | ~filters.user(allowed_users)))
+    app.add_handler(MessageHandler(start, filters.command(["help", "start"])))
+    app.add_handler(MessageHandler(city, filters.command(["city"])))
+    app.add_handler(MessageHandler(interval, filters.command(["interval"])))
+    app.add_handler(MessageHandler(status, filters.command(["status"])))
+    app.add_handler(MessageHandler(ping, filters.command(["ping"])))
+    app.add_handler(MessageHandler(request, filters.command(["request"])))
+
+
+    app.add_handler(MessageHandler(process_request, filters.create(
+        wrappers.filter_state_wrapper(State.INPUT_REQUEST, user_states))))
+    app.add_handler(MessageHandler(process_city, filters.create(
+        wrappers.filter_state_wrapper(State.INPUT_CITY, user_states))))
+    app.add_handler(MessageHandler(process_interval, filters.create(
+        wrappers.filter_state_wrapper(State.INPUT_INTERVAL, user_states))))
+
+    app.add_handler(CallbackQueryHandler(enable_track_request, filters.create(
+        wrappers.filter_callback_wrapper(settings.TRACK_REQUEST_PATTERN))))
+
+    app.add_handler(MessageHandler(any_message))
+
+
+    await app.start()
+
+    scheduler.start()
+
+    await idle()
+
+    await app.stop()
+    await avito.close_browser()
+
+
+if __name__ == "__main__":
+    asyncio.run(main())
 
