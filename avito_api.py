@@ -54,20 +54,25 @@ class Avito:
         base_url = self._format_url(request)
         await page.goto(base_url)
         url = await self._get_proper_url(page, request)
-        response = await self._get_avito_response(page, url)
-        pages_amount = min(self._get_pages_amount(response),
-                           settings.MAX_PAGE_LIMIT)
-        if pages_amount > request.page_limit > 0:
-            pages_amount = request.page_limit
+        raw_response = await self._get_avito_response(page, url)
+        is_extra, response = self._cut_extra_response(raw_response)
+        if not is_extra:
+            pages_amount = min(self._get_pages_amount(response),
+                               settings.MAX_PAGE_LIMIT)
+            if pages_amount > request.page_limit > 0:
+                pages_amount = request.page_limit
+        else:
+            pages_amount = 1
 
         pages = [response]
         for page_number in range(2, pages_amount + 1):
             page_response = await self._get_avito_response(page, 
                                         self._add_page_url(url, page_number))
-            if "items-extraTitle" in page_response: # ads from other cities
-                response_local_only = page_response.split("items-extraTitle")[0]
-                pages.append(response_local_only)
+            is_extra, page_response = self._cut_extra_response(page_response)
+            if is_extra:
+                pages.append(page_response)
                 break
+
             pages.append(page_response)
             await asyncio.sleep(2) # don't wanna get banned by avito
 
@@ -98,6 +103,11 @@ class Avito:
         await page.goto(url)
         return await page.content()
 
+    def _cut_extra_response(self, page_source: str) -> tuple[bool, str]:
+        if "items-extraTitle" in page_source:
+            return True, page_source.split("items-extraTitle")[0]
+        return False, page_source
+
     async def _get_proper_url(self, page: Page, request: Request) -> str:
         await page.waitForSelector("input[data-marker='price/from']")
         if request.min_price:
@@ -111,7 +121,6 @@ class Avito:
                 page.waitForNavigation(),
                 page.click("button[data-marker='search-filters/submit-button']"),
                 )
-        print(page.url)
         return page.url + "&localPriority=1"
 
     def _get_pages_amount(self, page_source: str) -> int:
@@ -151,12 +160,4 @@ class Avito:
 
     def _add_page_url(self, page_link: str, page_number: int) -> str:
         return page_link + "&p=" + str(page_number)
-
-
-if __name__ == "__main__":
-    req = Request(query="rx 580", city="ufa", min_price=2000, max_price=10000, 
-                  page_limit=0, sorting=0)
-    avito = Avito()
-    #with open("example.html", "r") as f:
-    #    page = f.read()
 
