@@ -14,7 +14,7 @@ import asyncio
 import random
 import re
 
-credentials = creds.get(Path(settings.AVITOBOT_MODULE_PATH) / settings.CREDS_FILE)
+credentials = creds.get(settings.CREDS_FILE)
 api_id, api_hash, bot_token, owner_id = credentials.api_id, credentials.api_hash,\
         credentials.bot_token, credentials.owner_id
 

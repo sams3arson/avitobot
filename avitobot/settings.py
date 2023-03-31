@@ -1,7 +1,11 @@
-AVITOBOT_MODULE_PATH="avitobot"
-CREDS_FILE = "config.ini"
-DB_FILE = "avitobot.db"
-DB_CONFIG = "avitobot.sql"
+from pathlib import Path
+
+
+BASE_DIR = Path(__file__).resolve().parent
+
+CREDS_FILE = BASE_DIR / "config.ini"
+DB_FILE = BASE_DIR / "avitobot.db"
+DB_CONFIG = BASE_DIR / "avitobot.sql"
 AVITO_BASE = "https://www.avito.ru"
 AVITO_URL = "https://www.avito.ru/{city}?q={query}&s={sorting}"
 AVITO_CITY = "https://www.avito.ru/{city}"
