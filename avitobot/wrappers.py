@@ -1,8 +1,8 @@
 from pyrogram import Client, filters
 from pyrogram.types import Message, CallbackQuery
-from states import State
+from avitobot.states import State
+from avitobot.custom_types import UserId
 from typing import Callable
-from custom_types import UserId
 import re
 
 def filter_state_wrapper(state: State, user_states: dict[UserId, State]) -> \

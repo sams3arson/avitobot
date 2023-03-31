@@ -3,22 +3,18 @@ from pyrogram.types import Message, InlineKeyboardButton, InlineKeyboardMarkup,\
         CallbackQuery
 from pyrogram.handlers import MessageHandler, CallbackQueryHandler
 from pathlib import Path
-from tools import creds
-from states import State
-from custom_types import UserId, CachedMarkup
 from transliterate import translit
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.job import Job
+from avitobot import database, texts, settings, wrappers, avito_api
+from avitobot.tools import creds
+from avitobot.states import State
+from avitobot.custom_types import UserId, CachedMarkup
 import asyncio
-import database
-import settings
-import texts
-import wrappers
-import avito_api
 import random
 import re
 
-credentials = creds.get(Path(settings.CREDS_FILE))
+credentials = creds.get(Path(settings.AVITOBOT_MODULE_PATH) / settings.CREDS_FILE)
 api_id, api_hash, bot_token, owner_id = credentials.api_id, credentials.api_hash,\
         credentials.bot_token, credentials.owner_id
 

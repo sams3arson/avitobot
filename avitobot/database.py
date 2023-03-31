@@ -1,6 +1,6 @@
 import sqlite3
-import settings
-from custom_types import UserId
+from avitobot import settings
+from avitobot.custom_types import UserId
 
 def initialize() -> sqlite3.Connection:
     conn = sqlite3.connect(settings.DB_FILE)

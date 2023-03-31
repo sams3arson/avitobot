@@ -2,7 +2,7 @@ from dataclasses import dataclass
 from typing import Literal 
 from bs4 import BeautifulSoup as BSoup
 from typing import TypedDict
-import settings
+from avitobot import settings
 import asyncio
 
 import pyppeteer

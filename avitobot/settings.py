@@ -1,3 +1,4 @@
+AVITOBOT_MODULE_PATH="avitobot"
 CREDS_FILE = "config.ini"
 DB_FILE = "avitobot.db"
 DB_CONFIG = "avitobot.sql"
