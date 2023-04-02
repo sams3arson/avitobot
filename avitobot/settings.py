@@ -1,6 +1,5 @@
 from pathlib import Path
 
-
 BASE_DIR = Path(__file__).resolve().parent
 
 CREDS_FILE = BASE_DIR / "config.ini"
