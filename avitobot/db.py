@@ -1,5 +1,6 @@
 import aiosqlite
 from avitobot import settings
+from typing import Iterable, Any
 
 async def get_db() -> aiosqlite.Connection:
     if not getattr(get_db, "db", None):
@@ -9,9 +10,9 @@ async def get_db() -> aiosqlite.Connection:
     return get_db.db
 
 
-async def fetch_one(sql: str) -> dict | None:
+async def fetch_one(sql: str, params: Iterable[Any]) -> dict | None:
     cursor = await _get_cursor()
-    await cursor.execute(sql)
+    await cursor.execute(sql, params)
     row = await cursor.fetchone()
     if not row:
         return None
@@ -21,9 +22,9 @@ async def fetch_one(sql: str) -> dict | None:
     return result
 
 
-async def fetch_all(sql: str) -> list[dict]:
+async def fetch_all(sql: str, params: Iterable[Any] | None = None) -> list[dict]:
     cursor = await _get_cursor()
-    await cursor.execute(sql)
+    await cursor.execute(sql, params)
     rows = await cursor.fetchall()
     results = []
 
@@ -33,9 +34,11 @@ async def fetch_all(sql: str) -> list[dict]:
     return results
 
 
-async def execute(sql: str, autocommit: bool = True) -> None:
+async def execute(
+    sql: str, params: Iterable[Any] | None = None, *, autocommit: bool = True
+) -> None:
     db = await get_db()
-    await db.execute(sql)
+    await db.execute(sql, params)
     if autocommit:
         await db.commit()
 
