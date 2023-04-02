@@ -33,8 +33,8 @@ def get(filename: Path | None = None) -> Credentials:
         owner_id = int(owner_id)
     else:
         raise InvalidCredentials("api_id or owner_id is not an integer")
-    return Credentials(***REMOVED***api_id, ***REMOVED***api_hash, ***REMOVED***bot_token,
-                       ***REMOVED***owner_id)
+    return Credentials(api_id=api_id, api_hash=api_hash, bot_token=bot_token,
+                       owner_id=owner_id)
 
 
 def read_config(filename: Path) -> list[str]:

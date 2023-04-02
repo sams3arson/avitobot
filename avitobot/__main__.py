@@ -21,7 +21,7 @@ from avitobot import (
 async def main():
     await avito.setup_browser()
 
-    app = Client("avitobot", ***REMOVED***API_ID, ***REMOVED***API_HASH, ***REMOVED***BOT_TOKEN)
+    app = Client("avitobot", api_id=API_ID, api_hash=API_HASH, bot_token=BOT_TOKEN)
 
     jobs.start_pings(app)
     jobs.start_track_requests(app)
