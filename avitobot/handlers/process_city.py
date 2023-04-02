@@ -1,3 +1,17 @@
+from pyrogram import Client
+from pyrogram.types import Message
+from transliterate import translit
+
+from avitobot.services import jobs
+from avitobot.states import State
+from avitobot import (
+    db,
+    user_states,
+    user_city,
+    avito
+)
+
+
 async def process_city(client: Client, message: Message) -> None:
     user_id = message.from_user.id
     user_states[user_id] = State.NO_STATE
@@ -15,9 +29,8 @@ async def process_city(client: Client, message: Message) -> None:
 
     await msg.delete()
     user_city[user_id] = city_text
-    db_cursor.execute("DELETE FROM city WHERE user_id = ?", (user_id,))
-    db_cursor.execute("INSERT INTO city (name, human_name, user_id) VALUES (?, ?, ?)",
+    await db.execute("DELETE FROM city WHERE user_id = ?", (user_id,))
+    await db.execute("INSERT INTO city (name, human_name, user_id) VALUES (?, ?, ?)",
                     (city_text, city_human, user_id))
-    db_conn.commit()
     await message.reply("Поиск успешно настроен по указанному населенному пункту.")
 

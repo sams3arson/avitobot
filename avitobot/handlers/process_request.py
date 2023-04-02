@@ -1,3 +1,8 @@
+from avitobot import avito_api, settings, services
+from avitobot.states import State
+from pyrogram import Client
+from pyrogram.types import Message, InlineKeyboardButton, InlineKeyboardMarkup
+
 async def process_request(client: Client, message: Message) -> None:
     user_id = message.from_user.id
     user_states[user_id] = State.NO_STATE
@@ -36,6 +41,6 @@ async def process_request(client: Client, message: Message) -> None:
     markup = InlineKeyboardMarkup([[InlineKeyboardButton("Отслеживать этот запрос",
                                  callback_data=f"TRACK_REQUEST={insert_rowid}")]])
     await wait_msg.delete()
-    await message.reply(format_request_result(result), reply_markup=markup,
-                        disable_web_page_preview=True)
+    await message.reply(services.format_request_result(result),
+                        reply_markup=markup, disable_web_page_preview=True)
 

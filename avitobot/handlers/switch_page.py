@@ -1,3 +1,11 @@
+from pyrogram import Client
+from pyrogram.types import CallbackQuery, InlineKeyboardButton, \
+        InlineKeyboardMarkup
+import re
+
+from avitobot import settings
+from avitobot import user_cached_markup
+
 async def switch_page(client: Client, callback_query: CallbackQuery):
     user_id = callback_query.from_user.id
     callback_data = callback_query.data
