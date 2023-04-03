@@ -3,14 +3,14 @@ from pyrogram.types import CallbackQuery, InlineKeyboardButton, \
         InlineKeyboardMarkup
 import re
 
-from avitobot import settings
+from avitobot import config
 from avitobot import user_cached_markup
 
 async def switch_page(client: Client, callback_query: CallbackQuery):
     user_id = callback_query.from_user.id
     callback_data = callback_query.data
 
-    match = re.search(settings.SWITCH_PAGE_PATTERN, callback_data)
+    match = re.search(config.SWITCH_PAGE_PATTERN, callback_data)
     start_page, end_page = int(match.group(1)), int(match.group(2))
 
     cached_markup = user_cached_markup.get(user_id)

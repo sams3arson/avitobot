@@ -1,10 +1,10 @@
 import aiosqlite
-from avitobot import settings
+from avitobot import config
 from typing import Iterable, Any
 
 async def get_db() -> aiosqlite.Connection:
     if not getattr(get_db, "db", None):
-        db = await aiosqlite.connect(settings.DB_FILE)
+        db = await aiosqlite.connect(config.DB_FILE)
         get_db.db = db
 
     return get_db.db

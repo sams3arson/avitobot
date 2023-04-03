@@ -6,7 +6,7 @@ from avitobot import (
     db,
     avito,
     avito_api,
-    settings,
+    config,
     services,
     user_states,
     user_city
@@ -31,7 +31,7 @@ async def process_request(client: Client, message: Message) -> None:
 
     city = user_city.get(user_id)
     if not city:
-        city = settings.DEFAULT_CITY
+        city = config.DEFAULT_CITY
 
     request = avito_api.Request(query=text_query, city=city, min_price=min_price,
                                 max_price=max_price, page_limit=page_limit,

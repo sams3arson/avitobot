@@ -5,7 +5,7 @@ import asyncio
 from avitobot.custom_types import UserId, CachedMarkup
 from avitobot.tools import credentials
 from avitobot.tools.states import State
-from avitobot import settings, avito_api, db
+from avitobot import config, avito_api, db
 
 SQL_STRINGS = {
     "allowed_users": "SELECT telegram_id FROM user",
@@ -15,7 +15,7 @@ SQL_STRINGS = {
     "user_track_request": "SELECT DISTINCT user_id FROM request WHERE is_tracked = 1",
 }
 
-credentials_ = credentials.get(settings.CREDS_FILE)
+credentials_ = credentials.get(config.CREDS_FILE)
 API_ID, API_HASH, BOT_TOKEN, OWNER_ID = credentials_.api_id, credentials_.api_hash, \
     credentials_.bot_token, credentials_.owner_id
 

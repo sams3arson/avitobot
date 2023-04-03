@@ -4,7 +4,7 @@ import re
 
 from avitobot.services import jobs
 from avitobot import (
-    settings,
+    config,
     db,
     avito_api,
     user_city,
@@ -19,14 +19,14 @@ async def enable_track_request(client: Client, callback_query: CallbackQuery) \
     callback_data = callback_query.data
     wait_msg = await client.send_message(user_id, "Обрабатываем запрос...")
 
-    match = re.search(settings.TRACK_REQUEST_PATTERN, callback_data)
+    match = re.search(config.TRACK_REQUEST_PATTERN, callback_data)
     request_rowid = match.group(1)
     await db.execute("UPDATE request SET is_tracked = 1 WHERE id = ?",
                      (request_rowid, ))
 
     city = user_city.get(user_id)
     if not city:
-        city = settings.DEFAULT_CITY
+        city = config.DEFAULT_CITY
 
     result = await db.fetch_one("SELECT query, page_limit, sorting, min_price, "
                                 "max_price FROM request WHERE id = ?", (request_rowid,))

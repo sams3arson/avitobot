@@ -6,7 +6,7 @@ from avitobot import (
     db,
     avito_api,
     avito,
-    settings,
+    config,
     texts,
     user_city
 )
@@ -19,7 +19,7 @@ async def track_request(client: Client, user_id: int) -> None:
 
     city = user_city.get(user_id)
     if not city:
-        city = settings.DEFAULT_CITY
+        city = config.DEFAULT_CITY
 
     for request_ in requests:
         await asyncio.sleep(random.randint(7, 13))  # don't wanna get banned by avito

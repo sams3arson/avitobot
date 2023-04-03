@@ -1,7 +1,7 @@
 from pyrogram import Client
 from pyrogram.types import Message
 
-from avitobot import texts, settings
+from avitobot import texts, config
 from avitobot import (
     db,
 
@@ -15,7 +15,7 @@ async def status(client: Client, message: Message) -> None:
     if city_:
         city = city_["human_name"]
     else:
-        city = settings.DEFAULT_HUMAN_CITY
+        city = config.DEFAULT_HUMAN_CITY
 
     requests = await db.fetch_all("SELECT query FROM request WHERE user_id = ? "
                                   "AND is_tracked = 1", (user_id,))
@@ -27,7 +27,7 @@ async def status(client: Client, message: Message) -> None:
     if interval_:
         interval = str(interval_["interval_len"])
     else:
-        interval = str(settings.DEFAULT_INTERVAL)
+        interval = str(config.DEFAULT_INTERVAL)
 
     ping_ = await db.fetch_one("SELECT id FROM ping WHERE user_id = ?", (user_id,))
     if ping_:

@@ -1,12 +1,10 @@
 from dataclasses import dataclass
 from typing import Literal 
 from bs4 import BeautifulSoup as BSoup
-from typing import TypedDict
-from avitobot import settings
+from avitobot import config
 import asyncio
 
 import pyppeteer
-from pyppeteer.browser import Browser
 from pyppeteer.page import Page
 
 
@@ -58,7 +56,7 @@ class Avito:
         is_extra, response = self._cut_extra_response(raw_response)
         if not is_extra:
             pages_amount = min(self._get_pages_amount(response),
-                               settings.MAX_PAGE_LIMIT)
+                               config.MAX_PAGE_LIMIT)
             if pages_amount > request.page_limit > 0:
                 pages_amount = request.page_limit
         else:
@@ -92,7 +90,7 @@ class Avito:
 
     async def check_city(self, city: str) -> bool:
         page = await self.browser.newPage()
-        await page.goto(settings.AVITO_CITY.format(city=city))
+        await page.goto(config.AVITO_CITY.format(city=city))
         page_source = await page.content()
         await page.close()
         if "Ой! Такой страницы на нашем сайте нет" in page_source:
@@ -152,7 +150,7 @@ class Avito:
         return ""
 
     def _format_url(self, request: Request) -> str:
-        return settings.AVITO_URL.format(
+        return config.AVITO_URL.format(
                 city=request.city,
                 query=request.query.strip().replace(" ", "+"),
                 sorting=request.sorting

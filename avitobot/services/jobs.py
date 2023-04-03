@@ -4,7 +4,7 @@ from apscheduler.job import Job
 from avitobot.custom_types import UserId
 from avitobot.services import track_request
 from avitobot import (
-    settings,
+    config,
     scheduler,
     user_ping,
     user_interval,
@@ -26,7 +26,7 @@ def start_pings(client: Client) -> None:
 def start_track_request_job(client: Client, user_id: UserId):
     minutes = user_interval.get(user_id)
     if not minutes:
-        minutes = settings.DEFAULT_INTERVAL
+        minutes = config.DEFAULT_INTERVAL
     return scheduler.add_job(track_request, "interval", minutes=minutes, args=(
                                                             client, user_id))
 

@@ -8,7 +8,7 @@ from avitobot.services import jobs
 from avitobot import (
     avito,
     db,
-    settings,
+    config,
     handlers,
     scheduler,
     API_ID,
@@ -48,8 +48,8 @@ async def main():
         app.add_handler(MessageHandler(handler, filter_))
 
     CALLBACK_HANDLERS = {
-        handlers.enable_track_request: filters.regex(settings.TRACK_REQUEST_PATTERN),
-        handlers.process_stop: filters.regex(settings.STOP_TRACK_REQUEST_PATTERN)
+        handlers.enable_track_request: filters.regex(config.TRACK_REQUEST_PATTERN),
+        handlers.process_stop: filters.regex(config.STOP_TRACK_REQUEST_PATTERN)
     }
 
     for handler, filter_ in CALLBACK_HANDLERS.items():
