@@ -1,7 +1,17 @@
-from avitobot import avito_api, settings, services
-from avitobot.states import State
 from pyrogram import Client
 from pyrogram.types import Message, InlineKeyboardButton, InlineKeyboardMarkup
+
+from avitobot.states import State
+from avitobot import (
+    db,
+    avito,
+    avito_api,
+    settings,
+    services,
+    user_states,
+    user_city
+)
+
 
 async def process_request(client: Client, message: Message) -> None:
     user_id = message.from_user.id
@@ -24,23 +34,21 @@ async def process_request(client: Client, message: Message) -> None:
         city = settings.DEFAULT_CITY
 
     request = avito_api.Request(query=text_query, city=city, min_price=min_price,
-                                max_price= max_price,  page_limit=page_limit,
+                                max_price=max_price, page_limit=page_limit,
                                 sorting=sorting)
 
     result = await avito.process_request(request)
 
-    db_cursor.execute("INSERT INTO request (query, is_tracked, url, user_id, "
-                      "page_limit, sorting, min_price, max_price) VALUES "
-                      "(?, ?, ?, ?, ?, ?, ?, ?)",
-                      (request.query, 0, result.url, user_id, request.page_limit,
-                       request.sorting, request.min_price, request.max_price))
-    db_cursor.execute("SELECT last_insert_rowid()")
-    insert_rowid = db_cursor.fetchall()[0][0]
-    db_conn.commit()
+    await db.execute("INSERT INTO request (query, is_tracked, url, user_id, "
+                     "page_limit, sorting, min_price, max_price) VALUES "
+                     "(?, ?, ?, ?, ?, ?, ?, ?)",
+                     (request.query, 0, result.url, user_id, request.page_limit,
+                      request.sorting, request.min_price, request.max_price))
+    rowid_ = await db.fetch_one("SELECT last_insert_rowid()")
+    insert_rowid = rowid_["last_insert_rowid()"]
 
     markup = InlineKeyboardMarkup([[InlineKeyboardButton("Отслеживать этот запрос",
-                                 callback_data=f"TRACK_REQUEST={insert_rowid}")]])
+                                                         callback_data=f"TRACK_REQUEST={insert_rowid}")]])
     await wait_msg.delete()
     await message.reply(services.format_request_result(result),
                         reply_markup=markup, disable_web_page_preview=True)
-
