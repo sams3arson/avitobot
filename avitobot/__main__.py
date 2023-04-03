@@ -6,6 +6,7 @@ from avitobot.states import State
 from avitobot.services import jobs
 from avitobot import (
     avito,
+    db,
     settings,
     wrappers,
     handlers,
@@ -62,8 +63,9 @@ async def main():
     scheduler.start()
     await idle()
 
-    await app.stop()
+    await db.close_db()
     await avito.close_browser()
+    await app.stop()
 
 
 if __name__ == "__main__":
