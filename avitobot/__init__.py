@@ -21,14 +21,19 @@ API_ID, API_HASH, BOT_TOKEN, OWNER_ID = credentials.api_id, credentials.api_hash
 
 allowed_users: list[UserId] = [OWNER_ID] + [row["user_id"] for row in
                         asyncio.run(db.fetch_all(SQL_STRINGS["allowed_users"]))]
+
 user_city: dict[UserId, str] = {row["user_id"]: row["name"] for row in
                             asyncio.run(db.fetch_all(SQL_STRINGS["user_city"]))}
+
 user_interval: dict[UserId, int] = {row["user_id"]: row["interval_len"] for row
                     in asyncio.run(db.fetch_all(SQL_STRINGS["user_interval"]))}
+
 user_ping: set[UserId] = {row["user_id"] for row in asyncio.run(db.fetch_all(
     SQL_STRINGS["user_ping"]))}
+
 user_track_request: set[UserId] = {row["user_id"] for row in asyncio.run(db.fetch_all(
     SQL_STRINGS["user_track_request"]))}
+
 ping_jobs: dict[UserId, Job] = dict()
 track_request_jobs: dict[UserId, Job] = dict()
 
