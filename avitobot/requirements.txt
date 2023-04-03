@@ -1,5 +1,6 @@
 pyrogram
 tgcrypto
+aiosqlite
 apscheduler
 pyppeteer
 beautifulsoup4
