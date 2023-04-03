@@ -2,13 +2,13 @@ from pyrogram import Client, filters, idle
 from pyrogram.handlers import MessageHandler, CallbackQueryHandler
 import asyncio
 
-from avitobot.states import State
+from avitobot.tools import wrappers
+from avitobot.tools.states import State
 from avitobot.services import jobs
 from avitobot import (
     avito,
     db,
     settings,
-    wrappers,
     handlers,
     scheduler,
     API_ID,

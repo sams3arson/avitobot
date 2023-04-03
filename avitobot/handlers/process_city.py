@@ -2,8 +2,7 @@ from pyrogram import Client
 from pyrogram.types import Message
 from transliterate import translit
 
-from avitobot.services import jobs
-from avitobot.states import State
+from avitobot.tools.states import State
 from avitobot import (
     db,
     user_states,

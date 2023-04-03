@@ -3,8 +3,8 @@ from apscheduler.job import Job
 import asyncio
 
 from avitobot.custom_types import UserId, CachedMarkup
-from avitobot.tools import creds
-from avitobot.states import State
+from avitobot.tools import credentials
+from avitobot.tools.states import State
 from avitobot import settings, avito_api, db
 
 SQL_STRINGS = {
@@ -15,9 +15,9 @@ SQL_STRINGS = {
     "user_track_request": "SELECT DISTINCT user_id FROM request WHERE is_tracked = 1",
 }
 
-credentials = creds.get(settings.CREDS_FILE)
-API_ID, API_HASH, BOT_TOKEN, OWNER_ID = credentials.api_id, credentials.api_hash, \
-    credentials.bot_token, credentials.owner_id
+credentials_ = credentials.get(settings.CREDS_FILE)
+API_ID, API_HASH, BOT_TOKEN, OWNER_ID = credentials_.api_id, credentials_.api_hash, \
+    credentials_.bot_token, credentials_.owner_id
 
 allowed_users: list[UserId] = [OWNER_ID] + [row["user_id"] for row in
                         asyncio.run(db.fetch_all(SQL_STRINGS["allowed_users"]))]

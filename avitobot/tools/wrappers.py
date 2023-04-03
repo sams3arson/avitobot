@@ -1,9 +1,9 @@
 from pyrogram import Client, filters
-from pyrogram.types import Message, CallbackQuery
-from avitobot.states import State
+from pyrogram.types import Message
+from avitobot.tools.states import State
 from avitobot.custom_types import UserId
 from typing import Callable
-import re
+
 
 def filter_state_wrapper(state: State, user_states: dict[UserId, State]) -> \
         Callable[[filters.Filter, Client, Message], bool]:
