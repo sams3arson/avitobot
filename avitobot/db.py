@@ -10,6 +10,10 @@ async def get_db() -> aiosqlite.Connection:
     return get_db.db
 
 
+async def close_db() -> None:
+    await (await get_db()).close()
+
+
 async def fetch_one(sql: str, params: Iterable[Any]) -> dict | None:
     cursor = await _get_cursor()
     await cursor.execute(sql, params)
