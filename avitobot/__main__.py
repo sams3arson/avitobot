@@ -26,34 +26,40 @@ async def main():
     jobs.start_pings(app)
     jobs.start_track_requests(app)
 
-    app.add_handler(MessageHandler(handlers.ignore, ~filters.private |
-                                   ~filters.user(allowed_users)))
-    app.add_handler(MessageHandler(handlers.start_and_help, filters.command(["help", "start"])))
-    app.add_handler(MessageHandler(handlers.city, filters.command(["city"])))
-    app.add_handler(MessageHandler(handlers.interval, filters.command(["interval"])))
-    app.add_handler(MessageHandler(handlers.status, filters.command(["status"])))
-    app.add_handler(MessageHandler(handlers.ping, filters.command(["ping"])))
-    app.add_handler(MessageHandler(handlers.request, filters.command(["request"])))
-    app.add_handler(MessageHandler(handlers.stop, filters.command(["stop"])))
+    MESSAGE_HANDLERS = {
+        handlers.ignore: (~filters.private | ~filters.user(allowed_users)),
+        handlers.start_and_help: filters.command(["help", "start"]),
+        handlers.city: filters.command(["city"]),
+        handlers.interval: filters.command(["interval"]),
+        handlers.status: filters.command(["status"]),
+        handlers.ping: filters.command(["ping"]),
+        handlers.request: filters.command(["request"]),
+        handlers.stop: filters.command(["stop"]),
+        handlers.process_request: filters.create(
+            wrappers.filter_state_wrapper(State.INPUT_REQUEST, user_states)),
+        handlers.process_city: filters.create(
+            wrappers.filter_state_wrapper(State.INPUT_CITY, user_states)),
+        handlers.process_interval: filters.create(
+            wrappers.filter_state_wrapper(State.INPUT_INTERVAL, user_states)),
+    }
 
-    app.add_handler(MessageHandler(handlers.process_request, filters.create(
-        wrappers.filter_state_wrapper(State.INPUT_REQUEST, user_states))))
-    app.add_handler(MessageHandler(handlers.process_city, filters.create(
-        wrappers.filter_state_wrapper(State.INPUT_CITY, user_states))))
-    app.add_handler(MessageHandler(handlers.process_interval, filters.create(
-        wrappers.filter_state_wrapper(State.INPUT_INTERVAL, user_states))))
+    for handler, filter_ in MESSAGE_HANDLERS.items():
+        app.add_handler(MessageHandler(handler, filter_))
 
-    app.add_handler(CallbackQueryHandler(handlers.enable_track_request, filters.create(
-        wrappers.filter_callback_wrapper(settings.TRACK_REQUEST_PATTERN))))
-    app.add_handler(CallbackQueryHandler(handlers.process_stop, filters.create(
-        wrappers.filter_callback_wrapper(settings.STOP_TRACK_REQUEST_PATTERN))))
+    CALLBACK_HANDLERS = {
+        handlers.enable_track_request: filters.create(
+            wrappers.filter_callback_wrapper(settings.TRACK_REQUEST_PATTERN)),
+        handlers.process_stop: filters.create(
+            wrappers.filter_callback_wrapper(settings.STOP_TRACK_REQUEST_PATTERN))
+    }
+
+    for handler, filter_ in CALLBACK_HANDLERS.items():
+        app.add_handler(CallbackQueryHandler(handler, filter_))
 
     app.add_handler(MessageHandler(handlers.any_message))
 
     await app.start()
-
     scheduler.start()
-
     await idle()
 
     await app.stop()
