@@ -14,7 +14,7 @@ async def close_db() -> None:
     await (await get_db()).close()
 
 
-async def fetch_one(sql: str, params: Iterable[Any]) -> dict | None:
+async def fetch_one(sql: str, params: Iterable[Any] | None = None) -> dict | None:
     cursor = await _get_cursor()
     await cursor.execute(sql, params)
     row = await cursor.fetchone()
