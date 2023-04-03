@@ -15,17 +15,3 @@ def filter_state_wrapper(state: State, user_states: dict[UserId, State]) -> \
             return True
         return False
     return filter_inner
-
-
-def filter_callback_wrapper(pattern: str) -> Callable[[filters.Filter, Client,
-                                                       CallbackQuery], bool]:
-    """Filter wrapper for Pyrogram handler of callback queries. Pass a regex pattern
-    as argument and it will return True if data of callback query matches that
-    pattern."""
-    def filter_inner(filt: filters.Filter, client: Client, update: CallbackQuery) -> bool:
-        r = re.match(pattern, update.data)
-        if r:
-            return True
-        return False
-    return filter_inner
-

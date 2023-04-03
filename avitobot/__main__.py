@@ -48,10 +48,8 @@ async def main():
         app.add_handler(MessageHandler(handler, filter_))
 
     CALLBACK_HANDLERS = {
-        handlers.enable_track_request: filters.create(
-            wrappers.filter_callback_wrapper(settings.TRACK_REQUEST_PATTERN)),
-        handlers.process_stop: filters.create(
-            wrappers.filter_callback_wrapper(settings.STOP_TRACK_REQUEST_PATTERN))
+        handlers.enable_track_request: filters.regex(settings.TRACK_REQUEST_PATTERN),
+        handlers.process_stop: filters.regex(settings.STOP_TRACK_REQUEST_PATTERN)
     }
 
     for handler, filter_ in CALLBACK_HANDLERS.items():
