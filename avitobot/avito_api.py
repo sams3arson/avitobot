@@ -39,7 +39,8 @@ class RequestResult:
 
 class Avito:
     async def setup_browser(self) -> None:
-        self.browser = await pyppeteer.launch()
+        chrome_args = ["-size=1920,1080"]
+        self.browser = await pyppeteer.launch(args=chrome_args)
 
     async def close_browser(self) -> None:
         await self.browser.close()
@@ -138,7 +139,7 @@ class Avito:
             description=self._parse_description(product),
             price=int(product.find("meta", {"itemprop": "price"}).get("content").strip()),
             avito_id=product.find("a", {"itemprop": "url"}).get("href").split("/")[-1],
-            url=settings.AVITO_BASE + product.find("a", {"itemprop": "url"}).get("href")
+            url=config.AVITO_BASE + product.find("a", {"itemprop": "url"}).get("href")
             ) for product in raw_products]
 
         return products
