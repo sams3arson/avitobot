@@ -27,7 +27,6 @@ async def enable_track_request(client: Client, callback_query: CallbackQuery) \
     city = user_city.get(user_id)
     if not city:
         city = settings.DEFAULT_CITY
-    await db.execute()
 
     result = await db.fetch_one("SELECT query, page_limit, sorting, min_price, "
                                 "max_price FROM request WHERE id = ?", (request_rowid,))
