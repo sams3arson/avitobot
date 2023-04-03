@@ -49,5 +49,6 @@ Commands:
 - `stop` - stop tracking a request
 
 ## Plans
+- add poetry as package manager for project
 - add English language (for experience, no idea why English would use this bot)
 - probably add some handling of exceptions that may occur
