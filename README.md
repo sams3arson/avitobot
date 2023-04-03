@@ -1,4 +1,5 @@
 # avitobot
+You can see a demo [here](https://j.gifs.com/16vMDj.mp4).
 ## Description
 avitobot is a bot with the help of which you can track advertisements on [Avito](https://www.avito.ru): 
 - the appearance of new ones,
