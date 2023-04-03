@@ -1,30 +1,53 @@
 # avitobot
-avitobot - бот, с помощью которого можно отслеживать объявления на Авито: появления
-новых, изменения цен на старых, общая статистика по объявлениям (по конкретным запросам).
-С помощью этого бота можно вести перепродажный бизнес.
+## Description
+avitobot is a bot with the help of which you can track advertisements on [Avito](https://www.avito.ru): 
+- the appearance of new ones,
+- price changes on old ones, 
+- general statistics on advertisements \
+(for specific queries).
+> Avito is a Russian platform for selling and buying used things.
 
-Функционал:
-- Получать статистику по запросу (средняя цена, кол-во объявлений, min/max цена)
-- Получать уведомления о появлении новых объявлений по запросу
-- Получать уведомления о изменении цен на уже опубликованные объявление по запросу
+With the help of this bot you can run a resale business.
 
-# TODO
-TODO:
-- [x] Спарсить объявления со всех страниц, а не с одной
-- [x] Сделать настройку города и форматирование ссылки по нему /city
-- [x] Сделать настройку интервала /interval
-- [x] Сделать настройку пинга /ping
-- [x] Сделать вывод настроек /status
-- [x] Сделать сохранение данных о запросе и всех объявлений по нему в БД
-- [x] Ожидание, пока с полями цен можно будет интерактировать, чтобы избежать
-ошибки `ElementNotInteractableException`
-- [x] Разобраться с асинхронностью и доступностью бота, распределением нагрузки
-(когда включил отслеживание объявлений, бот знатно подвисал и отвечал на сообщения
-в тг с большой задержкой, пока искал объявления в браузере)
-- [x] Сделать отслеживание запроса и всех объявлений по нему и уведомления при изменениях
+It's done using async libraries Pyrogram (tg bot), aiosqlite (db), pyppeteer (webdriver).
 
-# `pyppeteer` branch note
-Код бота был переписан для работы с асинхронной библиотекой вебдрайвера `pyppeteer`.
-Теперь бот работает асинхронно, и во время парсинга доступен для использования.
-Синхронная версия бота, использующая `selenium`, доступна на ветке `master`.
+## Installation
+You need to have Python with pip installed (3.10+ recommended, not tested on lower).
 
+1. Install requirements:
+```
+$ pip3 install -r requirements.txt
+```
+2. Create your own bot and get the bot token.
+
+3. Get Telegram app API keys at [my.telegram.org/apps](https://my.telegram.org/apps).
+
+4. Get ID of your telegram account with [userinfobot](https://t.me/userinfobot).
+
+5. Set environment variables `API_ID`, `API_HASH`, `BOT_TOKEN` and `OWNER_ID` or
+fill them in `config.ini` file inside `avitobot` package.
+
+6. Go to `avitobot` package, create an SQLite database named `avitobot.db` and use content 
+inside `avitobot.sql` file to create all required tables. You can run this command on Linux or macOS:
+```
+$ cat avitobot.sql | sqlite3 avitobot.db
+```
+7. Finally, run the bot (in repo folder, not in `avitobot` package):
+```
+$ python3 -m avitobot
+```
+If you experience any problems or bugs, feel free to create an issue.
+
+## Usage
+Commands:
+- `help` - get help info
+- `city` - set the city where bot will look for ads
+- `interval` - set interval of checking your tracked requests
+- `status` - get all info about your current settings and status
+- `ping` - bot will send you message every 4 hours if he's alive
+- `request` - look for ads on specific query (later, you can turn on tracking all ads on that request)
+- `stop` - stop tracking a request
+
+## Plans
+- add English language (for experience, no idea why English would use this bot)
+- probably add some handling of exceptions that may occur
